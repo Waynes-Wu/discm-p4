@@ -18,7 +18,8 @@ public class EnrollmentController {
     private final EnrollmentService enrollmentService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<EnrollmentDTO>> createEnrollment(@Valid @RequestBody EnrollmentDTO enrollmentDTO) {
+    public ResponseEntity<ApiResponse<EnrollmentDTO>> createEnrollment(
+            @Valid @RequestBody EnrollmentDTO enrollmentDTO) {
         EnrollmentDTO created = enrollmentService.createEnrollment(enrollmentDTO);
         return ResponseEntity.ok(ApiResponse.success(created, "Enrollment created successfully"));
     }

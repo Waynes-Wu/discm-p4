@@ -1,4 +1,4 @@
-package p4.courseservice.dto;
+package p4.enrollmentservice.dto;
 
 import lombok.Data;
 import java.time.LocalDateTime;

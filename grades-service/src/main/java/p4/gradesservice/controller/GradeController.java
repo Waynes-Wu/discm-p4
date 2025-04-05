@@ -57,21 +57,21 @@ public class GradeController {
         return ResponseEntity.ok(ApiResponse.success(grades));
     }
 
+    @GetMapping("/course/{courseId}/average")
+    public ResponseEntity<ApiResponse<Double>> getCourseAverage(@PathVariable Long courseId) {
+        double average = gradeService.calculateCourseAverage(courseId);
+        return ResponseEntity.ok(ApiResponse.success(average, "Course average calculated successfully"));
+    }
+
+    @GetMapping("/student/{studentId}/gpa")
+    public ResponseEntity<ApiResponse<Double>> getStudentGPA(@PathVariable Long studentId) {
+        double gpa = gradeService.calculateStudentGPA(studentId);
+        return ResponseEntity.ok(ApiResponse.success(gpa, "Student GPA calculated successfully"));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteGrade(@PathVariable Long id) {
         gradeService.deleteGrade(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Grade deleted successfully"));
-    }
-
-    @GetMapping("/course/{courseId}/average")
-    public ResponseEntity<ApiResponse<Double>> calculateCourseAverage(@PathVariable Long courseId) {
-        double average = gradeService.calculateCourseAverage(courseId);
-        return ResponseEntity.ok(ApiResponse.success(average));
-    }
-
-    @GetMapping("/student/{studentId}/gpa")
-    public ResponseEntity<ApiResponse<Double>> calculateStudentGPA(@PathVariable Long studentId) {
-        double gpa = gradeService.calculateStudentGPA(studentId);
-        return ResponseEntity.ok(ApiResponse.success(gpa));
     }
 }
