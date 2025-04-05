@@ -3,3 +3,22 @@ services:
     build: ./auth-service
     ports:
       - "8081:8081"
+  course-service:
+    build: ./course-service
+    ports:
+      - "8082:8082"
+
+  enrollmen-service:
+    build: ./enrollment-service
+    ports:
+      - "8083:8083"
+
+  grade-service:
+    build: ./grades-service
+    ports:
+      - "8084:8084"
+
+  faculty-service:
+    build: ./faculty-service
+    ports:
+      - "8085:8085"
