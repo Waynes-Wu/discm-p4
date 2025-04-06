@@ -1,5 +1,6 @@
 package p4.authservice.service;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
@@ -28,12 +29,25 @@ public class JwtUtil {
     }
 
     public String extractUsername(String token) {
-        return Jwts.parser()
+        try {
+            return Jwts.parser()
                 .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+        }
+        catch (ExpiredJwtException e) {
+            System.out.println("Token expired: " + e.getMessage());
+            throw new RuntimeException("Token has expired");
+        }
+
+        catch (Exception e) {
+            System.out.println("Error extracting username from token: " + e.getMessage());
+            return null;  
+        }
+
+        
     }
 
     public boolean isTokenValid(String token) {
