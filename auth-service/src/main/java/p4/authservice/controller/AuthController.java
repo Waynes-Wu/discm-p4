@@ -68,7 +68,6 @@ public class AuthController {
         User user = new User();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
-        user.setUsername(request.getEmail()); // Using email as username
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setType(UserType.valueOf(request.getRole().toUpperCase()));
         userRepository.save(user);

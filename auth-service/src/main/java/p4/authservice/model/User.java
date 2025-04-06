@@ -20,10 +20,6 @@ public class User {
     @Column(nullable = false)
     private String name;
 
-    @NotBlank(message = "Username is required")
-    @Column(unique = true, nullable = false)
-    private String username;
-
     @NotNull(message = "Type is required")
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
