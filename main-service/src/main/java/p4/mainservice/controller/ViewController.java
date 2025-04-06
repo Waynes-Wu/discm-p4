@@ -13,11 +13,19 @@ public class ViewController implements ErrorController {
 
     @GetMapping("/")
     public String home() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            return "redirect:/dashboard";
+        }
         return "redirect:/login";
     }
 
     @GetMapping("/login")
     public String login() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            return "redirect:/dashboard";
+        }
         return "login";
     }
 
