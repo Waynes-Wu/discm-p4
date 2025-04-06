@@ -56,8 +56,8 @@
             </div>
 
             <div class="mb-3">
-                <label for="description" class="form-label">Description</label>
-                <textarea class="form-control" id="description" th:field="*{description}" rows="3"></textarea>
+                <label for="department" class="form-label">Department</label>
+                <input type="text" class="form-control" id="department" th:field="*{department}" required>
             </div>
 
             <div class="mb-3">
@@ -66,31 +66,8 @@
             </div>
 
             <div class="mb-3">
-                <label for="facultyEmail" class="form-label">Faculty Email</label>
-                <input type="email" class="form-control" id="facultyEmail" th:field="*{facultyEmail}" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="maxStudents" class="form-label">Maximum Students</label>
-                <input type="number" class="form-control" id="maxStudents" th:field="*{maxStudents}" required min="1">
-            </div>
-
-            <div class="mb-3">
-                <label for="schedule" class="form-label">Schedule</label>
-                <input type="text" class="form-control" id="schedule" th:field="*{schedule}" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="room" class="form-label">Room</label>
-                <input type="text" class="form-control" id="room" th:field="*{room}" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="status" class="form-label">Status</label>
-                <select class="form-select" id="status" th:field="*{status}" required>
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                </select>
+                <label for="instructorId" class="form-label">Instructor ID</label>
+                <input type="number" class="form-control" id="instructorId" th:field="*{instructorId}" required>
             </div>
 
             <div class="mb-3">
