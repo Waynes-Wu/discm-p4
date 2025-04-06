@@ -58,7 +58,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
-        if (userRepository.findByEmail(request.getEmail()) != null) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity.ok(AuthResponse.builder()
                     .success(false)
                     .message("Email already exists")
@@ -68,6 +68,7 @@ public class AuthController {
         User user = new User();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
+        user.setUsername(request.getEmail()); // Using email as username
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setType(UserType.valueOf(request.getRole().toUpperCase()));
         userRepository.save(user);
