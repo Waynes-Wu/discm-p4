@@ -5,11 +5,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import p4.authservice.model.User;
 import p4.authservice.repository.UserRepository;
 import p4.authservice.service.JwtUtil;
 
+@RestController
 public class AuthController {
 
     @Autowired
