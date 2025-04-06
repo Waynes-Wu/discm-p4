@@ -30,7 +30,7 @@ public class Course {
     @Column(nullable = false)
     private String department;
 
-    @Positive(message = "Credit hours must be positive")
+    @Positive(message = "Credits must be positive")
     @Column(nullable = false)
-    private Integer creditHours;
+    private Double credits;
 }

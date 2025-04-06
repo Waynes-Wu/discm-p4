@@ -109,7 +109,7 @@ public class CourseServiceImpl implements CourseService {
         course.setCourseCode(courseDTO.getCourseCode());
         course.setInstructorId(courseDTO.getInstructorId());
         course.setDepartment(courseDTO.getDepartment());
-        course.setCreditHours(courseDTO.getCreditHours());
+        course.setCredits(courseDTO.getCredits());
     }
 
     private CourseDTO convertToDTO(Course course) {
@@ -119,7 +119,7 @@ public class CourseServiceImpl implements CourseService {
         dto.setCourseCode(course.getCourseCode());
         dto.setInstructorId(course.getInstructorId());
         dto.setDepartment(course.getDepartment());
-        dto.setCreditHours(course.getCreditHours());
+        dto.setCredits(course.getCredits());
         return dto;
     }
 }
