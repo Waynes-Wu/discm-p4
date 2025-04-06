@@ -1,4 +1,28 @@
+version: '3.8'
+
 services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./postgres:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  main-service:
+    build: ./main-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - faculty-service
+      - course-service
+      - enrollment-service
+      - grades-service
+
   auth-service:
     build: ./auth-service
     ports:
@@ -32,7 +56,7 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
 
-  grade-service:
+  grades-service:
     build: ./grades-service
     ports:
       - "8084:8084"
@@ -54,17 +78,5 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
 
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_MULTIPLE_DATABASES: enrollment_auth,enrollment_course,enrollment_enroll,enrollment_grade,enrollment_faculty
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
-
 volumes:
-  postgres_data:
+  postgres_data: {}

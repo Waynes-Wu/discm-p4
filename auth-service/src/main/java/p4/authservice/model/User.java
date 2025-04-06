@@ -3,6 +3,7 @@ package p4.authservice.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -19,7 +20,11 @@ public class User {
     @Column(nullable = false)
     private String name;
 
-    @NotBlank(message = "Type is required")
+    @NotBlank(message = "Username is required")
+    @Column(unique = true, nullable = false)
+    private String username;
+
+    @NotNull(message = "Type is required")
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private UserType type;
@@ -32,4 +37,8 @@ public class User {
     @NotBlank(message = "Password is required")
     @Column(nullable = false)
     private String password;
+
+    public UserType getUserType() {
+        return type;
+    }
 }
