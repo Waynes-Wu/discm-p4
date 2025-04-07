@@ -315,36 +315,58 @@
                 },
                 body: params
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Reset button
+            .then(response => response.json().then(data => ({ ok: response.ok, status: response.status, body: data })))
+            .then(({ ok, status, body }) => {
+                // Reset button state
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
-                
-                if (data.message) {
-                    showNotification(data.message, 'success');
-                    // Reset form
-                    this.reset();
-                    // Reload the course dropdown
-                    document.getElementById('courseCode').dispatchEvent(new Event('change'));
-                    // Refresh the grades table
-                    loadFacultyGrades();
-                } else if (data.error) {
-                    showNotification(data.error, 'danger');
+
+                if (!ok) {
+                    let errorMessage;
+                    if (body.error) {
+                        errorMessage = body.error;
+                    } else if (typeof body === 'string') {
+                        try {
+                            const parsedBody = JSON.parse(body);
+                            errorMessage = parsedBody.error || parsedBody.message;
+                        } catch (e) {
+                            errorMessage = body;
+                        }
+                    }
+                    
+                    // If we still don't have an error message and it's a 500, check if it's a duplicate grade
+                    if (!errorMessage && status === 500) {
+                        // Check if the error is from the grades service
+                        const checkUrl = `/grades/check/${document.getElementById('courseCode').value}/${document.getElementById('studentId').value}`;
+                        return fetch(checkUrl)
+                            .then(checkResponse => checkResponse.json())
+                            .then(checkData => {
+                                if (checkData === true) {
+                                    throw new Error(`Student #${document.getElementById('studentId').value} already has a grade for ${document.getElementById('courseCode').value}`);
+                                } else {
+                                    throw new Error('An error occurred while submitting the grade');
+                                }
+                            });
+                    }
+                    throw new Error(errorMessage || 'An error occurred while submitting the grade');
                 }
+
+                // Success case
+                showNotification(body.message || 'Grade submitted successfully', 'success');
+                // Reset form
+                document.getElementById('gradeForm').reset();
+                // Reload the course dropdown
+                document.getElementById('courseCode').dispatchEvent(new Event('change'));
+                // Refresh the grades table
+                loadFacultyGrades();
             })
             .catch(error => {
-                // Reset button
+                // Reset button if not already done
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
                 
                 console.error('Error:', error);
-                showNotification('An unexpected error occurred', 'danger');
+                showNotification(error.message, 'danger');
             });
         });
     </script>

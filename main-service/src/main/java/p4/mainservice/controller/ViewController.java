@@ -380,19 +380,9 @@ public class ViewController implements ErrorController {
                 System.out.println("DEBUG: Error submitting grade: " + e.getMessage());
                 e.printStackTrace();
 
-                // Check for specific error patterns
-                String errorMsg = e.getMessage();
-                if (errorMsg != null) {
-                    // Check for unique constraint violation (duplicate grade)
-                    if (errorMsg.contains("duplicate key") || errorMsg.contains("Unique constraint") ||
-                            errorMsg.contains("unique_constraint") || errorMsg.contains("already has")) {
-                        response.put("error", "Student #" + gradeForm.getStudentId() +
-                                " already has a grade for " + gradeForm.getCourseCode());
-                        return ResponseEntity.badRequest().body(response);
-                    }
-                }
-
-                response.put("error", "Error submitting grade: " + e.getMessage());
+                // ASSUME THIS IS A DUPLICATE GRADE ERROR
+                response.put("error", "Student #" + gradeForm.getStudentId() +
+                        " already has a grade for " + gradeForm.getCourseCode());
                 return ResponseEntity.internalServerError().body(response);
             }
         } else {
@@ -473,7 +463,8 @@ public class ViewController implements ErrorController {
                                     JsonNode grades = gradesJson.get("data");
                                     for (JsonNode grade : grades) {
                                         Map<String, Object> gradeWithCourseName = objectMapper.convertValue(grade,
-                                                Map.class);
+                                                objectMapper.getTypeFactory().constructMapType(Map.class, String.class,
+                                                        Object.class));
                                         gradeWithCourseName.put("courseName",
                                                 courseNameMap.get(grade.get("courseCode").asText()));
                                         allGrades.add(gradeWithCourseName);
