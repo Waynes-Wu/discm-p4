@@ -30,7 +30,7 @@ services:
     depends_on:
       - postgres
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/enrollment_auth
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/enrollment_system
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
 
@@ -41,7 +41,7 @@ services:
     depends_on:
       - postgres
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/enrollment_course
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/enrollment_system
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
 
@@ -52,7 +52,7 @@ services:
     depends_on:
       - postgres
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/enrollment_enroll
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/enrollment_system
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
 
@@ -63,7 +63,7 @@ services:
     depends_on:
       - postgres
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/enrollment_grade
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/enrollment_system
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
 
@@ -74,7 +74,7 @@ services:
     depends_on:
       - postgres
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/enrollment_faculty
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/enrollment_system
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
 

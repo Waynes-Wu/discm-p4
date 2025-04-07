@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import p4.gradesservice.dto.ApiResponse;
 import p4.gradesservice.dto.GradeDTO;
+import p4.gradesservice.model.Course;
+import p4.gradesservice.repository.CourseRepository;
 import p4.gradesservice.service.GradeService;
 
 import java.util.List;
@@ -16,6 +18,7 @@ import java.util.List;
 public class GradeController {
 
     private final GradeService gradeService;
+    private final CourseRepository courseRepository;
 
     @PostMapping
     public ResponseEntity<ApiResponse<GradeDTO>> submitGrade(@Valid @RequestBody GradeDTO gradeDTO) {
@@ -55,6 +58,12 @@ public class GradeController {
     public ResponseEntity<ApiResponse<List<GradeDTO>>> getGradesByCourse(@PathVariable String courseCode) {
         List<GradeDTO> grades = gradeService.getGradesByCourse(courseCode);
         return ResponseEntity.ok(ApiResponse.success(grades));
+    }
+
+    @GetMapping("/courses/instructor/{instructorId}")
+    public ResponseEntity<ApiResponse<List<Course>>> getCoursesByInstructor(@PathVariable Long instructorId) {
+        List<Course> courses = courseRepository.findByInstructorId(instructorId);
+        return ResponseEntity.ok(ApiResponse.success(courses));
     }
 
     @GetMapping("/course/{courseCode}/average")

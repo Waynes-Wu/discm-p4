@@ -1,29 +1,32 @@
-package p4.gradesservice.service;
+package p4.gradesservice.service.impl;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import p4.gradesservice.dto.GradeDTO;
+import p4.gradesservice.exception.ResourceNotFoundException;
 import p4.gradesservice.model.Grade;
+import p4.gradesservice.model.Course;
+import p4.gradesservice.repository.CourseRepository;
 import p4.gradesservice.repository.GradeRepository;
-import p4.gradesservice.exception.GradeNotFoundException;
-import p4.gradesservice.exception.DuplicateGradeException;
+import p4.gradesservice.service.GradeService;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class GradeServiceImpl implements GradeService {
 
     private final GradeRepository gradeRepository;
+    private final CourseRepository courseRepository;
 
     @Override
+    @Transactional
     public GradeDTO submitGrade(GradeDTO gradeDTO) {
-        if (gradeRepository.existsByStudentIdAndCourseCode(gradeDTO.getStudentId(), gradeDTO.getCourseCode())) {
-            throw new DuplicateGradeException("Grade already exists for this student and course");
+        // Verify course exists
+        if (!courseRepository.existsByCourseCode(gradeDTO.getCourseCode())) {
+            throw new ResourceNotFoundException("Course not found with code: " + gradeDTO.getCourseCode());
         }
 
         Grade grade = new Grade();
@@ -32,40 +35,39 @@ public class GradeServiceImpl implements GradeService {
         grade.setGrade(gradeDTO.getGrade());
         grade.setComments(gradeDTO.getComments());
 
-        Grade savedGrade = gradeRepository.save(grade);
-        return convertToDTO(savedGrade);
+        Grade saved = gradeRepository.save(grade);
+        return convertToDTO(saved);
     }
 
     @Override
+    @Transactional
     public GradeDTO updateGrade(Long id, GradeDTO gradeDTO) {
         Grade grade = gradeRepository.findById(id)
-                .orElseThrow(() -> new GradeNotFoundException("Grade not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Grade not found with id: " + id));
 
         grade.setGrade(gradeDTO.getGrade());
         grade.setComments(gradeDTO.getComments());
 
-        Grade updatedGrade = gradeRepository.save(grade);
-        return convertToDTO(updatedGrade);
+        Grade updated = gradeRepository.save(grade);
+        return convertToDTO(updated);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public GradeDTO getGradeById(Long id) {
         Grade grade = gradeRepository.findById(id)
-                .orElseThrow(() -> new GradeNotFoundException("Grade not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Grade not found with id: " + id));
         return convertToDTO(grade);
     }
 
     @Override
     public GradeDTO getGradeByStudentAndCourse(Long studentId, String courseCode) {
         Grade grade = gradeRepository.findByStudentIdAndCourseCode(studentId, courseCode)
-                .orElseThrow(() -> new GradeNotFoundException(
-                        "Grade not found for studentId: " + studentId + " and courseCode: " + courseCode));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Grade not found for student: " + studentId + " and course: " + courseCode));
         return convertToDTO(grade);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<GradeDTO> getGradesByStudent(Long studentId) {
         return gradeRepository.findByStudentId(studentId).stream()
                 .map(this::convertToDTO)
@@ -80,19 +82,19 @@ public class GradeServiceImpl implements GradeService {
     }
 
     @Override
+    @Transactional
     public void deleteGrade(Long id) {
         if (!gradeRepository.existsById(id)) {
-            throw new GradeNotFoundException("Grade not found with id: " + id);
+            throw new ResourceNotFoundException("Grade not found with id: " + id);
         }
         gradeRepository.deleteById(id);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public double calculateCourseAverage(String courseCode) {
         List<Grade> grades = gradeRepository.findByCourseCode(courseCode);
         if (grades.isEmpty()) {
-            throw new EntityNotFoundException("No grades found for course: " + courseCode);
+            return 0.0;
         }
         return grades.stream()
                 .mapToDouble(Grade::getGrade)
@@ -101,16 +103,27 @@ public class GradeServiceImpl implements GradeService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public double calculateStudentGPA(Long studentId) {
         List<Grade> grades = gradeRepository.findByStudentId(studentId);
         if (grades.isEmpty()) {
-            throw new EntityNotFoundException("No grades found for student: " + studentId);
+            return 0.0;
         }
-        return grades.stream()
-                .mapToDouble(Grade::getGrade)
-                .average()
-                .orElse(0.0);
+
+        // Get total credits and weighted grade points
+        double totalCredits = 0.0;
+        double totalGradePoints = 0.0;
+
+        for (Grade grade : grades) {
+            Course course = courseRepository.findByCourseCode(grade.getCourseCode());
+            if (course == null) {
+                throw new ResourceNotFoundException("Course not found: " + grade.getCourseCode());
+            }
+
+            totalCredits += course.getCredits();
+            totalGradePoints += grade.getGrade() * course.getCredits();
+        }
+
+        return totalCredits > 0 ? totalGradePoints / totalCredits : 0.0;
     }
 
     private GradeDTO convertToDTO(Grade grade) {
