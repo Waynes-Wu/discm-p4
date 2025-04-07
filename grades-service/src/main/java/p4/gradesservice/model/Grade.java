@@ -1,8 +1,8 @@
 package p4.gradesservice.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Entity
 @Table(name = "grades", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"student_id", "course_id"})
+        @UniqueConstraint(columnNames = { "student_id", "course_code" })
 })
 public class Grade {
     @Id
@@ -23,12 +23,12 @@ public class Grade {
     @Column(name = "student_id", nullable = false)
     private Long studentId;
 
-    @NotNull(message = "Course ID is required")
-    @Column(name = "course_id", nullable = false)
-    private Long courseId;
+    @NotNull(message = "Course code is required")
+    @Column(name = "course_code", nullable = false)
+    private String courseCode;
 
-    @Min(value = 0, message = "Grade cannot be less than 0")
-    @Max(value = 100, message = "Grade cannot be more than 100")
+    @DecimalMin(value = "0.0", message = "Grade cannot be less than 0.0")
+    @DecimalMax(value = "4.0", message = "Grade cannot be more than 4.0")
     @Column(nullable = false)
     private Double grade;
 

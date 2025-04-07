@@ -7,7 +7,10 @@ import java.util.Optional;
 
 public interface GradeRepository extends JpaRepository<Grade, Long> {
     List<Grade> findByStudentId(Long studentId);
-    List<Grade> findByCourseId(Long courseId);
-    Optional<Grade> findByStudentIdAndCourseId(Long studentId, Long courseId);
-    boolean existsByStudentIdAndCourseId(Long studentId, Long courseId);
+
+    List<Grade> findByCourseCode(String courseCode);
+
+    Optional<Grade> findByStudentIdAndCourseCode(Long studentId, String courseCode);
+
+    boolean existsByStudentIdAndCourseCode(Long studentId, String courseCode);
 }

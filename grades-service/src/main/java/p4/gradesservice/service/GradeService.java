@@ -5,12 +5,20 @@ import java.util.List;
 
 public interface GradeService {
     GradeDTO submitGrade(GradeDTO gradeDTO);
+
     GradeDTO updateGrade(Long id, GradeDTO gradeDTO);
+
     GradeDTO getGradeById(Long id);
-    GradeDTO getGradeByStudentAndCourse(Long studentId, Long courseId);
+
+    GradeDTO getGradeByStudentAndCourse(Long studentId, String courseCode);
+
     List<GradeDTO> getGradesByStudent(Long studentId);
-    List<GradeDTO> getGradesByCourse(Long courseId);
+
+    List<GradeDTO> getGradesByCourse(String courseCode);
+
     void deleteGrade(Long id);
-    double calculateCourseAverage(Long courseId);
+
+    double calculateCourseAverage(String courseCode);
+
     double calculateStudentGPA(Long studentId);
 }

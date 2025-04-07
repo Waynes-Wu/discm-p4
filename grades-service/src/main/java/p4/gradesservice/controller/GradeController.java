@@ -37,11 +37,11 @@ public class GradeController {
         return ResponseEntity.ok(ApiResponse.success(grade));
     }
 
-    @GetMapping("/student/{studentId}/course/{courseId}")
+    @GetMapping("/student/{studentId}/course/{courseCode}")
     public ResponseEntity<ApiResponse<GradeDTO>> getGradeByStudentAndCourse(
             @PathVariable Long studentId,
-            @PathVariable Long courseId) {
-        GradeDTO grade = gradeService.getGradeByStudentAndCourse(studentId, courseId);
+            @PathVariable String courseCode) {
+        GradeDTO grade = gradeService.getGradeByStudentAndCourse(studentId, courseCode);
         return ResponseEntity.ok(ApiResponse.success(grade));
     }
 
@@ -51,22 +51,22 @@ public class GradeController {
         return ResponseEntity.ok(ApiResponse.success(grades));
     }
 
-    @GetMapping("/course/{courseId}")
-    public ResponseEntity<ApiResponse<List<GradeDTO>>> getGradesByCourse(@PathVariable Long courseId) {
-        List<GradeDTO> grades = gradeService.getGradesByCourse(courseId);
+    @GetMapping("/course/{courseCode}")
+    public ResponseEntity<ApiResponse<List<GradeDTO>>> getGradesByCourse(@PathVariable String courseCode) {
+        List<GradeDTO> grades = gradeService.getGradesByCourse(courseCode);
         return ResponseEntity.ok(ApiResponse.success(grades));
     }
 
-    @GetMapping("/course/{courseId}/average")
-    public ResponseEntity<ApiResponse<Double>> getCourseAverage(@PathVariable Long courseId) {
-        double average = gradeService.calculateCourseAverage(courseId);
-        return ResponseEntity.ok(ApiResponse.success(average, "Course average calculated successfully"));
+    @GetMapping("/course/{courseCode}/average")
+    public ResponseEntity<ApiResponse<Double>> getCourseAverage(@PathVariable String courseCode) {
+        double average = gradeService.calculateCourseAverage(courseCode);
+        return ResponseEntity.ok(ApiResponse.success(average));
     }
 
     @GetMapping("/student/{studentId}/gpa")
     public ResponseEntity<ApiResponse<Double>> getStudentGPA(@PathVariable Long studentId) {
         double gpa = gradeService.calculateStudentGPA(studentId);
-        return ResponseEntity.ok(ApiResponse.success(gpa, "Student GPA calculated successfully"));
+        return ResponseEntity.ok(ApiResponse.success(gpa));
     }
 
     @DeleteMapping("/{id}")

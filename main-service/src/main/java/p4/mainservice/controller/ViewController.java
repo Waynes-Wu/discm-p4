@@ -56,6 +56,16 @@ public class ViewController implements ErrorController {
         return "redirect:/login";
     }
 
+    @GetMapping("/grades")
+    public String grades(Model model) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            model.addAttribute("username", auth.getName());
+            return "grades/form";
+        }
+        return "redirect:/login";
+    }
+
     @RequestMapping("/error")
     public String handleError() {
         return "error";
