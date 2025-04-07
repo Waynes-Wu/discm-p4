@@ -20,36 +20,47 @@ import org.springframework.http.MediaType;
 import org.springframework.ui.Model;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 // import p4.mainservice.service.EnrollmentService;
 
 @Controller
 @RequestMapping("/enrollment")
 public class EnrollmentController {
-    
+
     @Value("${enrollment.service.url}")
     private String enrollmentServiceUrl;
 
+    @Value("${auth.service.url}")
+    private String authServiceUrl;
+
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
+
+    @Autowired
+    public EnrollmentController(RestTemplate restTemplate, ObjectMapper objectMapper) {
+        this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
+    }
 
     @GetMapping
-    public String showEnrollForm(@RequestParam(value = "courseId", required = false) String courseId, Model model) {
-        model.addAttribute("courseId", courseId != null ? courseId : "");
+    public String showEnrollForm(@RequestParam(value = "courseCode", required = false) String courseCode, Model model) {
+        model.addAttribute("courseCode", courseCode != null ? courseCode : "");
         return "enrollment/forms";
     }
 
-
     @PostMapping
-    public String processEnrollment(
-        @RequestParam("courseId") Long courseId,
-        HttpServletRequest request
-    ) {
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> processEnrollment(
+            @RequestParam("courseCode") String courseCode,
+            HttpServletRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
-            return "redirect:/login";
+            return ResponseEntity.status(401).body(Map.of("error", "Not authenticated"));
         }
-    
-        String email = auth.getName();
+
         String jwt = null;
-    
+
         // Extract JWT cookie
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -59,41 +70,59 @@ public class EnrollmentController {
                 }
             }
         }
-    
+
         if (jwt == null) {
-            return "redirect:/login";
+            return ResponseEntity.status(401).body(Map.of("error", "No JWT token found"));
         }
-    
-        
-        // TODO: make a request to enroll 
+
         try {
-            String url = enrollmentServiceUrl + "/api/enrollments";
-    
-            // Request body as a map (JSON automatically)
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("courseId", courseId);
-            requestBody.put("email", email);
-    
+            // First, get user info from auth service
+            String authUrl = authServiceUrl + "/api/auth/user";
+            HttpHeaders authHeaders = new HttpHeaders();
+            authHeaders.setBearerAuth(jwt);
+            HttpEntity<?> authEntity = new HttpEntity<>(authHeaders);
+
+            ResponseEntity<String> authResponse = restTemplate.exchange(
+                    authUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    authEntity,
+                    String.class);
+
+            if (!authResponse.getStatusCode().is2xxSuccessful()) {
+                return ResponseEntity.status(401).body(Map.of("error", "Invalid authentication"));
+            }
+
+            // Parse the auth response to get user ID
+            JsonNode authJson = objectMapper.readTree(authResponse.getBody());
+            if (!authJson.has("id")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "User ID not found in token"));
+            }
+            Long userId = authJson.get("id").asLong();
+
+            // Now make the enrollment request
+            String enrollUrl = enrollmentServiceUrl + "/api/enrollments";
+
+            // Create an enrollment DTO structure
+            Map<String, Object> enrollmentDTO = new HashMap<>();
+            enrollmentDTO.put("userId", userId);
+            enrollmentDTO.put("courseCode", courseCode);
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(jwt);
-    
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-    
-            RestTemplate restTemplate = new RestTemplate();
-            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
-    
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(enrollmentDTO, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(enrollUrl, entity, String.class);
+
             if (response.getStatusCode().is2xxSuccessful()) {
-                return "redirect:/enrollment/success";
+                return ResponseEntity.ok(Map.of("message", "Enrollment successful"));
             } else {
-                System.out.println("Enrollment failed: " + response.getStatusCode());
-                return "redirect:/enrollment?error=1";
+                return ResponseEntity.badRequest().body(Map.of("error", "Enrollment failed: " + response.getBody()));
             }
-    
+
         } catch (Exception e) {
             e.printStackTrace();
-            return "redirect:/enrollment?error=1";
+            return ResponseEntity.internalServerError().body(Map.of("error", "An error occurred: " + e.getMessage()));
         }
-
     }
 }

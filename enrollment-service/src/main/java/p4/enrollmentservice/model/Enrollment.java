@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Entity
 @Table(name = "enrollments", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"user_id", "course_id"})
+        @UniqueConstraint(columnNames = { "user_id", "course_code" })
 })
 public class Enrollment {
     @Id
@@ -19,8 +19,8 @@ public class Enrollment {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "course_id", nullable = false)
-    private Long courseId;
+    @Column(name = "course_code", nullable = false)
+    private String courseCode;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

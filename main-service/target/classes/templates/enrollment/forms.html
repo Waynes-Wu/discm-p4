@@ -4,19 +4,77 @@
 <head>
     <title>Enroll</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <style>
+        .alert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            min-width: 300px;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container mt-5">
         <h2>Enroll in Course</h2>
-        <form action="/enrollment" method="post">
+        <form id="enrollmentForm" action="/enrollment" method="post">
             <div class="mb-3">
-                <label for="courseId" class="form-label">Course ID</label>
-                <input type="text" class="form-control" id="courseId" name="courseId" th:value="${courseId}" required>
+                <label for="courseCode" class="form-label">Course Code</label>
+                <input type="text" class="form-control" id="courseCode" name="courseCode" th:value="${courseCode}" required>
             </div>
             <button type="submit" class="btn btn-primary">Enroll</button>
         </form>
     </div>
+
+    <!-- Alert for notifications -->
+    <div id="notification" class="alert" role="alert">
+        <span id="notificationMessage"></span>
+        <button type="button" class="btn-close" onclick="hideNotification()" style="float: right;"></button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('enrollmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch('/enrollment', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    showNotification(data.message, 'success');
+                    this.reset();
+                } else if (data.error) {
+                    showNotification(data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showNotification('An unexpected error occurred', 'danger');
+                console.error('Error:', error);
+            });
+        });
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            const messageSpan = document.getElementById('notificationMessage');
+            
+            notification.className = `alert alert-${type}`;
+            messageSpan.textContent = message;
+            notification.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(hideNotification, 5000);
+        }
+
+        function hideNotification() {
+            document.getElementById('notification').style.display = 'none';
+        }
+    </script>
 </body>
 
 </html>

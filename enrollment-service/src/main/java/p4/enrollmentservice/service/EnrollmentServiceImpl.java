@@ -20,8 +20,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public EnrollmentDTO createEnrollment(EnrollmentDTO enrollmentDTO) {
-        if (enrollmentRepository.existsByUserIdAndCourseId(
-                enrollmentDTO.getUserId(), enrollmentDTO.getCourseId())) {
+        if (enrollmentRepository.existsByUserIdAndCourseCode(
+                enrollmentDTO.getUserId(), enrollmentDTO.getCourseCode())) {
             throw new IllegalStateException("User is already enrolled in this course");
         }
 
@@ -48,8 +48,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EnrollmentDTO> getEnrollmentsByCourseId(Long courseId) {
-        return enrollmentRepository.findByCourseId(courseId).stream()
+    public List<EnrollmentDTO> getEnrollmentsByCourseCode(String courseCode) {
+        return enrollmentRepository.findByCourseCode(courseCode).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -64,14 +64,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean isUserEnrolledInCourse(Long userId, Long courseId) {
-        return enrollmentRepository.existsByUserIdAndCourseId(userId, courseId);
+    public boolean isUserEnrolledInCourse(Long userId, String courseCode) {
+        return enrollmentRepository.existsByUserIdAndCourseCode(userId, courseCode);
     }
 
     private Enrollment convertToEntity(EnrollmentDTO dto) {
         Enrollment enrollment = new Enrollment();
         enrollment.setUserId(dto.getUserId());
-        enrollment.setCourseId(dto.getCourseId());
+        enrollment.setCourseCode(dto.getCourseCode());
         return enrollment;
     }
 
@@ -79,7 +79,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         EnrollmentDTO dto = new EnrollmentDTO();
         dto.setId(enrollment.getId());
         dto.setUserId(enrollment.getUserId());
-        dto.setCourseId(enrollment.getCourseId());
+        dto.setCourseCode(enrollment.getCourseCode());
         dto.setCreatedAt(enrollment.getCreatedAt());
         return dto;
     }

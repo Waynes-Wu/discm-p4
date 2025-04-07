@@ -7,6 +7,6 @@ import java.time.LocalDateTime;
 public class EnrollmentDTO {
     private Long id;
     private Long userId;
-    private Long courseId;
+    private String courseCode;
     private LocalDateTime createdAt;
 }
