@@ -36,6 +36,7 @@ public class ViewController implements ErrorController {
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated()) {
             model.addAttribute("username", auth.getName());
@@ -51,6 +52,7 @@ public class ViewController implements ErrorController {
             model.addAttribute("totalEnrollments", 0);
             return "dashboard";
         }
+        // * i dont think this works | fix added in securityconfig
         return "redirect:/login";
     }
 

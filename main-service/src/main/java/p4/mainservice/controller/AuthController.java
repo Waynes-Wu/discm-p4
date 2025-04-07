@@ -37,6 +37,7 @@ public class AuthController {
                 Cookie cookie = new Cookie("jwt", authResponse.getToken());
                 cookie.setPath("/");
                 cookie.setHttpOnly(true);
+                // * might need to recheck, jwt token itself expires after an hour 
                 cookie.setMaxAge(86400); // 24 hours
                 response.addCookie(cookie);
 
@@ -69,6 +70,7 @@ public class AuthController {
                 Cookie cookie = new Cookie("jwt", authResponse.getToken());
                 cookie.setPath("/");
                 cookie.setHttpOnly(true);
+                // * might need to recheck, jwt token itself expires after an hour 
                 cookie.setMaxAge(86400); // 24 hours
                 response.addCookie(cookie);
 

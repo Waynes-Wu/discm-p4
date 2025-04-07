@@ -49,7 +49,12 @@ public class SecurityConfig {
             .userDetailsService(userDetailsService)
             .addFilterBefore(
                 new JwtAuthenticationFilter(jwtService),
-                UsernamePasswordAuthenticationFilter.class);
+                UsernamePasswordAuthenticationFilter.class)
+
+            .formLogin()  
+                .loginPage("/login")  
+                .defaultSuccessUrl("/dashboard", true);
+                // .permitAll();  
 
         return http.build();
     }
