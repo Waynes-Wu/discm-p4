@@ -25,6 +25,9 @@
             background-color: #f8f9fa;
             border-radius: 0.25rem;
         }
+        #courseCode {
+            text-transform: uppercase;
+        }
     </style>
 </head>
 
@@ -65,7 +68,10 @@
         <form id="enrollmentForm" action="/enrollment" method="post">
             <div class="mb-3">
                 <label for="courseCode" class="form-label">Course Code</label>
-                <input type="text" class="form-control" id="courseCode" name="courseCode" th:value="${courseCode}" required>
+                <input type="text" class="form-control" id="courseCode" name="courseCode" th:value="${courseCode}" required
+                       oninput="this.value = this.value.toUpperCase()"
+                       pattern="[A-Z0-9]+"
+                       title="Course code must contain only uppercase letters and numbers">
             </div>
             <button type="submit" class="btn btn-primary">Enroll</button>
         </form>
