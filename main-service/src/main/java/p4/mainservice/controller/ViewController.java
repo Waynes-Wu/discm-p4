@@ -29,6 +29,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
+import org.springframework.http.HttpMethod;
+import org.springframework.core.ParameterizedTypeReference;
 
 @Controller
 public class ViewController implements ErrorController {
@@ -409,7 +411,7 @@ public class ViewController implements ErrorController {
                             ResponseEntity<String> gradesResponse = restTemplate.exchange(
                                     gradesUrl,
                                     org.springframework.http.HttpMethod.GET,
-                                    null,
+                                    new HttpEntity<>(authHeaders),
                                     String.class);
 
                             System.out.println("DEBUG: Grades service response: " + gradesResponse.getBody());
@@ -739,6 +741,91 @@ public class ViewController implements ErrorController {
         }
 
         return ResponseEntity.ok(List.of());
+    }
+
+    @GetMapping("/grades/view")
+    public String viewGrades(Model model, HttpServletRequest request) {
+        try {
+            // Get JWT token from cookies
+            String jwtToken = null;
+            Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (Cookie cookie : cookies) {
+                    if ("jwt".equals(cookie.getName())) {
+                        jwtToken = cookie.getValue();
+                        break;
+                    }
+                }
+            }
+
+            if (jwtToken == null) {
+                return "redirect:/auth/login";
+            }
+
+            // Set up headers with JWT token
+            HttpHeaders authHeaders = new HttpHeaders();
+            authHeaders.setBearerAuth(jwtToken);
+            HttpEntity<?> authEntity = new HttpEntity<>(authHeaders);
+
+            // Get user info from auth service
+            String authUrl = authServiceUrl + "/api/auth/user";
+            ResponseEntity<String> authResponse = restTemplate.exchange(
+                    authUrl,
+                    HttpMethod.GET,
+                    authEntity,
+                    String.class);
+
+            if (authResponse.getStatusCode().is2xxSuccessful()) {
+                JsonNode userInfo = objectMapper.readTree(authResponse.getBody());
+
+                if (!userInfo.has("id")) {
+                    System.out.println("DEBUG: No ID found in auth response: " + authResponse.getBody());
+                    model.addAttribute("grades", new ArrayList<>());
+                    return "grades/view";
+                }
+
+                Long userId = userInfo.get("id").asLong();
+
+                // Get grades from grades service
+                System.out.println("Fetching grades for user ID: " + userId);
+                String gradesUrl = gradesServiceUrl + "/api/grades/student/" + userId;
+                System.out.println("Calling URL: " + gradesUrl);
+
+                ResponseEntity<String> gradesResponse = restTemplate.exchange(
+                        gradesUrl,
+                        HttpMethod.GET,
+                        authEntity,
+                        String.class);
+
+                System.out.println("Grades response status: " + gradesResponse.getStatusCode());
+                if (gradesResponse.getBody() != null) {
+                    System.out.println("Grades response body: " + gradesResponse.getBody());
+                }
+
+                if (gradesResponse.getStatusCode().is2xxSuccessful()) {
+                    JsonNode gradesJson = objectMapper.readTree(gradesResponse.getBody());
+                    if (gradesJson.get("success").asBoolean() && gradesJson.has("data")) {
+                        JsonNode grades = gradesJson.get("data");
+                        List<Object> gradesList = objectMapper.convertValue(grades,
+                                objectMapper.getTypeFactory().constructCollectionType(List.class,
+                                        Object.class));
+                        model.addAttribute("grades", gradesList);
+                    } else {
+                        model.addAttribute("grades", new ArrayList<>());
+                    }
+                } else {
+                    model.addAttribute("grades", new ArrayList<>());
+                }
+            }
+
+            return "grades/view";
+
+        } catch (Exception e) {
+            System.err.println("Error in viewGrades: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("grades", new ArrayList<>());
+            return "grades/view";
+        }
     }
 
     @RequestMapping("/error")
