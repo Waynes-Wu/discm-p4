@@ -110,6 +110,7 @@ public class AuthController {
             if (user != null) {
                 return ResponseEntity.ok(AuthResponse.builder()
                         .success(true)
+                        .id(user.getId())
                         .email(user.getEmail())
                         .name(user.getName())
                         .role(user.getType().toString())

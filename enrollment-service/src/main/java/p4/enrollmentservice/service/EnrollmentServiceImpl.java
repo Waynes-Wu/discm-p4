@@ -20,13 +20,18 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public EnrollmentDTO createEnrollment(EnrollmentDTO enrollmentDTO) {
+        System.out.println("DEBUG: Creating enrollment for user " + enrollmentDTO.getUserId() + " in course "
+                + enrollmentDTO.getCourseCode());
         if (enrollmentRepository.existsByUserIdAndCourseCode(
                 enrollmentDTO.getUserId(), enrollmentDTO.getCourseCode())) {
+            System.out.println("DEBUG: User " + enrollmentDTO.getUserId() + " is already enrolled in course "
+                    + enrollmentDTO.getCourseCode());
             throw new IllegalStateException("User is already enrolled in this course");
         }
 
         Enrollment enrollment = convertToEntity(enrollmentDTO);
         Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
+        System.out.println("DEBUG: Successfully created enrollment with ID: " + savedEnrollment.getId());
         return convertToDTO(savedEnrollment);
     }
 
@@ -41,7 +46,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Override
     @Transactional(readOnly = true)
     public List<EnrollmentDTO> getEnrollmentsByUserId(Long userId) {
-        return enrollmentRepository.findByUserId(userId).stream()
+        System.out.println("DEBUG: Getting enrollments for user ID: " + userId);
+        List<Enrollment> enrollments = enrollmentRepository.findByUserId(userId);
+        System.out.println("DEBUG: Found " + enrollments.size() + " enrollments");
+        enrollments.forEach(e -> System.out
+                .println("DEBUG: Found enrollment: courseCode=" + e.getCourseCode() + ", userId=" + e.getUserId()));
+        return enrollments.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -65,7 +75,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Override
     @Transactional(readOnly = true)
     public boolean isUserEnrolledInCourse(Long userId, String courseCode) {
-        return enrollmentRepository.existsByUserIdAndCourseCode(userId, courseCode);
+        System.out.println("DEBUG: Checking if user " + userId + " is enrolled in course " + courseCode);
+        boolean isEnrolled = enrollmentRepository.existsByUserIdAndCourseCode(userId, courseCode);
+        System.out.println("DEBUG: User " + userId + " enrolled in " + courseCode + ": " + isEnrolled);
+        return isEnrolled;
     }
 
     private Enrollment convertToEntity(EnrollmentDTO dto) {
