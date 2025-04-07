@@ -43,6 +43,12 @@ public class CourseController {
         return ResponseEntity.ok(ApiResponse.success(course));
     }
 
+    @GetMapping("/code/{courseCode}/name")
+    public ResponseEntity<ApiResponse<String>> getCourseNameByCode(@PathVariable String courseCode) {
+        CourseDTO course = courseService.getCourseByCourseCode(courseCode);
+        return ResponseEntity.ok(ApiResponse.success(course.getCourseName()));
+    }
+
     @GetMapping("/department/{department}")
     public ResponseEntity<ApiResponse<List<CourseDTO>>> getCoursesByDepartment(@PathVariable String department) {
         List<CourseDTO> courses = courseService.getCoursesByDepartment(department);

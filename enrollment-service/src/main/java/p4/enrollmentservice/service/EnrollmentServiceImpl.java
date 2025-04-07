@@ -2,8 +2,13 @@ package p4.enrollmentservice.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import p4.enrollmentservice.dto.ApiResponse;
 import p4.enrollmentservice.dto.EnrollmentDTO;
 import p4.enrollmentservice.model.Enrollment;
 import p4.enrollmentservice.repository.EnrollmentRepository;
@@ -17,16 +22,47 @@ import java.util.stream.Collectors;
 public class EnrollmentServiceImpl implements EnrollmentService {
 
     private final EnrollmentRepository enrollmentRepository;
+    private final RestTemplate restTemplate;
 
     @Override
     public EnrollmentDTO createEnrollment(EnrollmentDTO enrollmentDTO) {
         System.out.println("DEBUG: Creating enrollment for user " + enrollmentDTO.getUserId() + " in course "
                 + enrollmentDTO.getCourseCode());
+
+        // First check if user is already enrolled
         if (enrollmentRepository.existsByUserIdAndCourseCode(
                 enrollmentDTO.getUserId(), enrollmentDTO.getCourseCode())) {
             System.out.println("DEBUG: User " + enrollmentDTO.getUserId() + " is already enrolled in course "
                     + enrollmentDTO.getCourseCode());
             throw new IllegalStateException("User is already enrolled in this course");
+        }
+
+        System.out.println("DEBUG: Checking if course exists: " + enrollmentDTO.getCourseCode());
+        System.out.println("DEBUG: Calling course service URL: http://course-service:8082/api/courses/code/"
+                + enrollmentDTO.getCourseCode() + "/name");
+
+        // Then check if course exists
+        try {
+            ResponseEntity<ApiResponse<String>> response = restTemplate.exchange(
+                    "http://course-service:8082/api/courses/code/" + enrollmentDTO.getCourseCode() + "/name",
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<ApiResponse<String>>() {
+                    });
+
+            System.out.println("DEBUG: Course service response status: " + response.getStatusCode());
+            System.out.println("DEBUG: Course service response body: " + response.getBody());
+
+            if (response.getBody() == null || !response.getBody().isSuccess()) {
+                System.out.println("DEBUG: Course " + enrollmentDTO.getCourseCode() + " does not exist");
+                throw new IllegalStateException("Course does not exist");
+            }
+
+            System.out.println("DEBUG: Course exists, proceeding with enrollment");
+        } catch (Exception e) {
+            System.out.println("DEBUG: Course service error: " + e.getMessage());
+            System.out.println("DEBUG: Course " + enrollmentDTO.getCourseCode() + " does not exist");
+            throw new IllegalStateException("Course does not exist");
         }
 
         Enrollment enrollment = convertToEntity(enrollmentDTO);

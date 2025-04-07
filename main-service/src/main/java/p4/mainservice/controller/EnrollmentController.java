@@ -131,6 +131,10 @@ public class EnrollmentController {
             if (e.getMessage() != null && e.getMessage().contains("User is already enrolled in this course")) {
                 return ResponseEntity.badRequest().body(Map.of("error", "You've already enrolled in " + courseCode));
             }
+            if (e.getMessage() != null && e.getMessage().contains("Course does not exist")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Course does not exist"));
+            }
+
             return ResponseEntity.internalServerError().body(Map.of("error", "An error occurred: " + e.getMessage()));
         }
     }
