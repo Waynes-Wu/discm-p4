@@ -2,14 +2,18 @@ package p4.enrollmentservice.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import p4.enrollmentservice.dto.ApiResponse;
 import p4.enrollmentservice.dto.EnrollmentDTO;
+import p4.enrollmentservice.repository.EnrollmentRepository;
 import p4.enrollmentservice.service.EnrollmentService;
 import p4.enrollmentservice.util.JwtUtil;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/enrollments")
@@ -18,6 +22,9 @@ public class EnrollmentController {
 
     private final EnrollmentService enrollmentService;
     private final JwtUtil jwtUtil;
+
+    @Autowired
+    private final EnrollmentRepository enrollmentRepository;
 
     @PostMapping
     public ResponseEntity<ApiResponse<EnrollmentDTO>> createEnrollment(
@@ -72,5 +79,13 @@ public class EnrollmentController {
             @RequestParam String courseCode) {
         boolean isEnrolled = enrollmentService.isUserEnrolledInCourse(userId, courseCode);
         return ResponseEntity.ok(ApiResponse.success(isEnrolled));
+    }
+
+    @GetMapping("/counts")
+    public ResponseEntity<Object> getEnrollmentCount() {
+        long totalEnrollments = enrollmentRepository.count();
+        
+        // Return a map with the count of enrollments
+        return ResponseEntity.ok(Map.of("enrollmentCount", totalEnrollments));
     }
 }

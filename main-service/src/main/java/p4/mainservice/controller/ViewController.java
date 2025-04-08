@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -35,7 +36,9 @@ import org.springframework.core.ParameterizedTypeReference;
 @Controller
 public class ViewController implements ErrorController {
 
+    @Autowired
     private final RestTemplate restTemplate;
+    @Autowired
     private final ObjectMapper objectMapper;
 
     @Value("${auth.service.url}")
@@ -93,7 +96,9 @@ public class ViewController implements ErrorController {
                 }
             }
 
+            System.out.println("Debug: " + "1");
             if (jwt != null) {
+                System.out.println("Debug: " + "jwt not null");
                 try {
                     // Get user info from auth service
                     HttpHeaders headers = new HttpHeaders();
@@ -106,243 +111,254 @@ public class ViewController implements ErrorController {
                             entity,
                             String.class);
 
+                    System.out.println("Debug: " + "2");
                     if (authResponse.getStatusCode().is2xxSuccessful()) {
                         JsonNode userInfo = objectMapper.readTree(authResponse.getBody());
-
+                        System.out.println("Debug: userInfo = " + userInfo.toString());
+                        System.out.println("Debug: " + "3");
                         if (userInfo != null && userInfo.has("success") && userInfo.get("success").asBoolean()) {
-                            JsonNode data = userInfo.get("data");
-                            if (data != null) {
-                                JsonNode user = data.get("user");
-                                if (user != null) {
-                                    String role = user.has("role") ? user.get("role").asText() : "";
-                                    Long userId = user.has("id") ? user.get("id").asLong() : null;
-                                    String username = user.has("username") ? user.get("username").asText() : "User";
 
-                                    model.addAttribute("username", username);
+                            if (userInfo != null) {
+                                String role = userInfo.has("role") ? userInfo.get("role").asText() : "";
+                                Long userId = userInfo.has("id") ? userInfo.get("id").asLong() : null;
+                                String username = userInfo.has("username") ? userInfo.get("username").asText() : "User";
 
-                                    if (userId != null && !role.isEmpty()) {
-                                        switch (role) {
-                                            case "STUDENT":
-                                                // Set default values
-                                                model.addAttribute("enrolledCourses", 0);
-                                                model.addAttribute("currentGpa", "0.00");
+                                model.addAttribute("username", username);
 
-                                                try {
-                                                    // Try to fetch enrolled courses count
-                                                    ResponseEntity<String> enrollmentsResponse = restTemplate.exchange(
-                                                            enrollmentServiceUrl + "/api/enrollments/student/" + userId,
-                                                            org.springframework.http.HttpMethod.GET,
-                                                            entity,
-                                                            String.class);
+                                System.out.println("Debug: " + "5");
+                                if (userId != null && !role.isEmpty()) {
+                                    System.out.println("Debug: " + role);
+                                    switch (role) {
+                                        case "STUDENT":
+                                            // Set default values
+                                            model.addAttribute("enrolledCourses", 0);
+                                            model.addAttribute("currentGpa", "0.00");
 
-                                                    if (enrollmentsResponse.getStatusCode().is2xxSuccessful()) {
-                                                        JsonNode enrollmentsJson = objectMapper
-                                                                .readTree(enrollmentsResponse.getBody());
-                                                        if (enrollmentsJson.get("success").asBoolean()
-                                                                && enrollmentsJson.has("data")) {
-                                                            model.addAttribute("enrolledCourses",
-                                                                    enrollmentsJson.get("data").size());
-                                                        }
+                                            try {
+                                                // Try to fetch enrolled courses count
+                                                ResponseEntity<String> enrollmentsResponse = restTemplate.exchange(
+                                                        enrollmentServiceUrl + "/api/enrollments/student/" + userId,
+                                                        org.springframework.http.HttpMethod.GET,
+                                                        entity,
+                                                        String.class);
+
+                                                if (enrollmentsResponse.getStatusCode().is2xxSuccessful()) {
+                                                    JsonNode enrollmentsJson = objectMapper
+                                                            .readTree(enrollmentsResponse.getBody());
+                                                    if (enrollmentsJson.get("success").asBoolean()
+                                                            && enrollmentsJson.has("data")) {
+                                                        model.addAttribute("enrolledCourses",
+                                                                enrollmentsJson.get("data").size());
                                                     }
-                                                } catch (Exception e) {
-                                                    System.out.println("Error fetching enrollments: " + e.getMessage());
+                                                }
+                                            } catch (Exception e) {
+                                                System.out.println("Error fetching enrollments: " + e.getMessage());
+                                            }
+
+                                            try {
+                                                // Try to fetch GPA
+                                                ResponseEntity<String> gpaResponse = restTemplate.exchange(
+                                                        gradesServiceUrl + "/api/grades/student/" + userId + "/gpa",
+                                                        org.springframework.http.HttpMethod.GET,
+                                                        entity,
+                                                        String.class);
+
+                                                if (gpaResponse.getStatusCode().is2xxSuccessful()) {
+                                                    JsonNode gpaJson = objectMapper.readTree(gpaResponse.getBody());
+                                                    if (gpaJson.get("success").asBoolean() && gpaJson.has("data")) {
+                                                        model.addAttribute("currentGpa",
+                                                                String.format("%.2f",
+                                                                        gpaJson.get("data").asDouble()));
+                                                    }
+                                                }
+                                            } catch (Exception e) {
+                                                System.out.println("Error fetching GPA: " + e.getMessage());
+                                            }
+                                            break;
+
+                                        case "ADMIN":
+                                            // Set default values
+                                            model.addAttribute("totalStudents", 0);
+                                            model.addAttribute("totalFaculty", 0);
+                                            model.addAttribute("activeCourses", 0);
+                                            model.addAttribute("totalEnrollments", 0);
+
+                                            try {
+                                                // Fetch total students and faculty
+                                                ResponseEntity<String> userCountsResponse = restTemplate.exchange(
+                                                        authServiceUrl + "/api/auth/counts",
+                                                        org.springframework.http.HttpMethod.GET,
+                                                        entity,
+                                                        String.class);
+
+                                                if (userCountsResponse.getStatusCode().is2xxSuccessful()) {
+                                                    JsonNode countsJson = objectMapper
+                                                            .readTree(userCountsResponse.getBody());
+                                                    if (countsJson.get("students") != null) {
+                                                        model.addAttribute("totalStudents",
+                                                                countsJson.get("students").asInt());
+                                                    }
+                                                    if (countsJson.get("faculty") != null) {
+                                                        model.addAttribute("totalFaculty",
+                                                                countsJson.get("faculty").asInt());
+                                                    }
+                                                }
+                                            } catch (Exception e) {
+                                                System.out.println("Error fetching user counts: " + e.getMessage());
+                                            }
+
+                                            try {
+                                                // Fetch active courses
+                                                ResponseEntity<String> coursesResponse = restTemplate.exchange(
+                                                        courseServiceUrl + "/api/courses",
+                                                        org.springframework.http.HttpMethod.GET,
+                                                        entity,
+                                                        String.class);
+
+                                                if (coursesResponse.getStatusCode().is2xxSuccessful()) {
+                                                    JsonNode coursesJson = objectMapper
+                                                            .readTree(coursesResponse.getBody());
+                                                    if (coursesJson.get("data") != null) {
+                                                        model.addAttribute("activeCourses",
+                                                                coursesJson.get("data").size());
+                                                    }
+                                                }
+                                            } catch (Exception e) {
+                                                System.out.println("Error fetching course count: " + e.getMessage());
+                                            }
+
+                                            try {
+                                                // Fetch total enrollments
+                                                ResponseEntity<String> enrollmentsResponse = restTemplate.exchange(
+                                                        enrollmentServiceUrl + "/api/enrollments/counts",
+                                                        org.springframework.http.HttpMethod.GET,
+                                                        entity,
+                                                        String.class);
+
+                                                if (enrollmentsResponse.getStatusCode().is2xxSuccessful()) {
+                                                    JsonNode enrollmentsJson = objectMapper
+                                                            .readTree(enrollmentsResponse.getBody());
+                                                    if (enrollmentsJson.get("enrollmentCount") != null) {
+                                                        model.addAttribute("totalEnrollments",
+                                                                enrollmentsJson.get("enrollmentCount").asInt());
+                                                    }
+                                                }
+                                            } catch (Exception e) {
+                                                System.out
+                                                        .println("Error fetching enrollment count: " + e.getMessage());
+                                            }
+                                            break;
+
+                                        // ! ------------------------------------------------
+                                        case "FACULTY":
+                                            // Set default values
+                                            model.addAttribute("teachingCourses", 0);
+                                            model.addAttribute("totalStudents", 0);
+                                            model.addAttribute("totalGraded", 0); // To track total graded students
+                                            model.addAttribute("pendingGrades", 0); // To track pending grades count
+
+                                            int totalStudents = 0;
+                                            int totalGraded = 0;
+
+                                            try {
+                                                // 1. Fetch courses taught by instructor
+                                                ResponseEntity<String> coursesResponse = restTemplate.exchange(
+                                                        courseServiceUrl + "/api/courses/instructor/" + userId,
+                                                        HttpMethod.GET,
+                                                        entity,
+                                                        String.class);
+
+                                                if (coursesResponse.getStatusCode().is2xxSuccessful()) {
+                                                    JsonNode coursesJson = objectMapper
+                                                            .readTree(coursesResponse.getBody());
+                                                    if (coursesJson.get("success").asBoolean()
+                                                            && coursesJson.has("data")) {
+                                                        JsonNode courseList = coursesJson.get("data");
+                                                        int teachingCourses = courseList.size();
+                                                        model.addAttribute("teachingCourses", teachingCourses);
+
+                                                        for (JsonNode course : courseList) {
+                                                            String courseCode = course.get("courseCode").asText();
+
+                                                            try {
+                                                                // 2. Fetch enrollments per course
+                                                                ResponseEntity<String> enrollmentsResponse = restTemplate
+                                                                        .exchange(
+                                                                                enrollmentServiceUrl
+                                                                                        + "/api/enrollments/course/"
+                                                                                        + courseCode,
+                                                                                HttpMethod.GET,
+                                                                                entity,
+                                                                                String.class);
+
+                                                                if (enrollmentsResponse.getStatusCode()
+                                                                        .is2xxSuccessful()) {
+                                                                    JsonNode enrollmentsJson = objectMapper
+                                                                            .readTree(enrollmentsResponse.getBody());
+                                                                    if (enrollmentsJson.get("success").asBoolean()
+                                                                            && enrollmentsJson.has("data")) {
+                                                                        JsonNode enrolledStudents = enrollmentsJson
+                                                                                .get("data");
+                                                                        totalStudents += enrolledStudents.size();
+                                                                    }
+                                                                }
+
+                                                            } catch (Exception e) {
+                                                                System.out.println(
+                                                                        "Error fetching enrollments for course "
+                                                                                + courseCode + ": " + e.getMessage());
+                                                            }
+
+                                                            try {
+                                                                // 3. Fetch grades for the course to calculate total
+                                                                // graded students
+                                                                ResponseEntity<String> gradesResponse = restTemplate
+                                                                        .exchange(
+                                                                                gradesServiceUrl + "/api/grades/course/"
+                                                                                        + courseCode,
+                                                                                HttpMethod.GET,
+                                                                                entity,
+                                                                                String.class);
+
+                                                                if (gradesResponse.getStatusCode().is2xxSuccessful()) {
+                                                                    JsonNode gradesJson = objectMapper
+                                                                            .readTree(gradesResponse.getBody());
+                                                                    if (gradesJson.get("success").asBoolean()
+                                                                            && gradesJson.has("data")) {
+                                                                        JsonNode gradesData = gradesJson.get("data");
+                                                                        totalGraded += gradesData.size(); // Count the
+                                                                                                          // number of
+                                                                                                          // graded
+                                                                                                          // students
+                                                                                                          // for this
+                                                                                                          // course
+                                                                    }
+                                                                }
+
+                                                            } catch (Exception e) {
+                                                                System.out.println("Error fetching grades for course "
+                                                                        + courseCode + ": " + e.getMessage());
+                                                            }
+                                                        }
+
+                                                        model.addAttribute("totalStudents", totalStudents);
+                                                        model.addAttribute("totalGraded", totalGraded);
+                                                        model.addAttribute("pendingGrades",
+                                                                totalStudents - totalGraded); // Calculate pending
+                                                                                              // grades
+                                                    }
                                                 }
 
-                                                try {
-                                                    // Try to fetch GPA
-                                                    ResponseEntity<String> gpaResponse = restTemplate.exchange(
-                                                            gradesServiceUrl + "/api/grades/student/" + userId + "/gpa",
-                                                            org.springframework.http.HttpMethod.GET,
-                                                            entity,
-                                                            String.class);
+                                            } catch (Exception e) {
+                                                System.out.println("Error fetching courses: " + e.getMessage());
+                                            }
 
-                                                    if (gpaResponse.getStatusCode().is2xxSuccessful()) {
-                                                        JsonNode gpaJson = objectMapper.readTree(gpaResponse.getBody());
-                                                        if (gpaJson.get("success").asBoolean() && gpaJson.has("data")) {
-                                                            model.addAttribute("currentGpa",
-                                                                    String.format("%.2f",
-                                                                            gpaJson.get("data").asDouble()));
-                                                        }
-                                                    }
-                                                } catch (Exception e) {
-                                                    System.out.println("Error fetching GPA: " + e.getMessage());
-                                                }
-                                                break;
+                                            break;
 
-                                            case "ADMIN":
-                                                // Set default values
-                                                model.addAttribute("totalStudents", 0);
-                                                model.addAttribute("totalFaculty", 0);
-                                                model.addAttribute("activeCourses", 0);
-                                                model.addAttribute("totalEnrollments", 0);
-
-                                                try {
-                                                    // Try to fetch total students
-                                                    ResponseEntity<String> studentsResponse = restTemplate.exchange(
-                                                            authServiceUrl + "/api/auth/users/count/STUDENT",
-                                                            org.springframework.http.HttpMethod.GET,
-                                                            entity,
-                                                            String.class);
-
-                                                    if (studentsResponse.getStatusCode().is2xxSuccessful()) {
-                                                        JsonNode countJson = objectMapper
-                                                                .readTree(studentsResponse.getBody());
-                                                        if (countJson.get("success").asBoolean()) {
-                                                            model.addAttribute("totalStudents",
-                                                                    countJson.get("data").asInt());
-                                                        }
-                                                    }
-                                                } catch (Exception e) {
-                                                    System.out
-                                                            .println("Error fetching student count: " + e.getMessage());
-                                                }
-
-                                                try {
-                                                    // Try to fetch total faculty
-                                                    ResponseEntity<String> facultyResponse = restTemplate.exchange(
-                                                            authServiceUrl + "/api/auth/users/count/FACULTY",
-                                                            org.springframework.http.HttpMethod.GET,
-                                                            entity,
-                                                            String.class);
-
-                                                    if (facultyResponse.getStatusCode().is2xxSuccessful()) {
-                                                        JsonNode countJson = objectMapper
-                                                                .readTree(facultyResponse.getBody());
-                                                        if (countJson.get("success").asBoolean()) {
-                                                            model.addAttribute("totalFaculty",
-                                                                    countJson.get("data").asInt());
-                                                        }
-                                                    }
-                                                } catch (Exception e) {
-                                                    System.out
-                                                            .println("Error fetching faculty count: " + e.getMessage());
-                                                }
-
-                                                try {
-                                                    // Try to fetch active courses
-                                                    ResponseEntity<String> coursesResponse = restTemplate.exchange(
-                                                            courseServiceUrl + "/api/courses/count",
-                                                            org.springframework.http.HttpMethod.GET,
-                                                            entity,
-                                                            String.class);
-
-                                                    if (coursesResponse.getStatusCode().is2xxSuccessful()) {
-                                                        JsonNode countJson = objectMapper
-                                                                .readTree(coursesResponse.getBody());
-                                                        if (countJson.get("success").asBoolean()) {
-                                                            model.addAttribute("activeCourses",
-                                                                    countJson.get("data").asInt());
-                                                        }
-                                                    }
-                                                } catch (Exception e) {
-                                                    System.out
-                                                            .println("Error fetching course count: " + e.getMessage());
-                                                }
-
-                                                try {
-                                                    // Try to fetch total enrollments
-                                                    ResponseEntity<String> totalEnrollmentsResponse = restTemplate
-                                                            .exchange(
-                                                                    enrollmentServiceUrl + "/api/enrollments/count",
-                                                                    org.springframework.http.HttpMethod.GET,
-                                                                    entity,
-                                                                    String.class);
-
-                                                    if (totalEnrollmentsResponse.getStatusCode().is2xxSuccessful()) {
-                                                        JsonNode countJson = objectMapper
-                                                                .readTree(totalEnrollmentsResponse.getBody());
-                                                        if (countJson.get("success").asBoolean()) {
-                                                            model.addAttribute("totalEnrollments",
-                                                                    countJson.get("data").asInt());
-                                                        }
-                                                    }
-                                                } catch (Exception e) {
-                                                    System.out
-                                                            .println("Error fetching enrollment count: "
-                                                                    + e.getMessage());
-                                                }
-                                                break;
-
-                                            case "FACULTY":
-                                                // Set default values
-                                                model.addAttribute("teachingCourses", 0);
-                                                model.addAttribute("totalStudents", 0);
-                                                model.addAttribute("pendingGrades", 0);
-
-                                                try {
-                                                    // Try to fetch teaching courses count
-                                                    ResponseEntity<String> teachingResponse = restTemplate.exchange(
-                                                            courseServiceUrl + "/api/courses/instructor/" + userId
-                                                                    + "/count",
-                                                            org.springframework.http.HttpMethod.GET,
-                                                            entity,
-                                                            String.class);
-
-                                                    if (teachingResponse.getStatusCode().is2xxSuccessful()) {
-                                                        JsonNode countJson = objectMapper
-                                                                .readTree(teachingResponse.getBody());
-                                                        if (countJson.get("success").asBoolean()) {
-                                                            model.addAttribute("teachingCourses",
-                                                                    countJson.get("data").asInt());
-                                                        }
-                                                    }
-                                                } catch (Exception e) {
-                                                    System.out.println(
-                                                            "Error fetching teaching courses count: " + e.getMessage());
-                                                }
-
-                                                try {
-                                                    // Try to fetch total students in their courses
-                                                    ResponseEntity<String> courseStudentsResponse = restTemplate
-                                                            .exchange(
-                                                                    courseServiceUrl + "/api/courses/instructor/"
-                                                                            + userId
-                                                                            + "/students/count",
-                                                                    org.springframework.http.HttpMethod.GET,
-                                                                    entity,
-                                                                    String.class);
-
-                                                    if (courseStudentsResponse.getStatusCode().is2xxSuccessful()) {
-                                                        JsonNode countJson = objectMapper
-                                                                .readTree(courseStudentsResponse.getBody());
-                                                        if (countJson.get("success").asBoolean()) {
-                                                            model.addAttribute("totalStudents",
-                                                                    countJson.get("data").asInt());
-                                                        }
-                                                    }
-                                                } catch (Exception e) {
-                                                    System.out
-                                                            .println("Error fetching student count: " + e.getMessage());
-                                                }
-
-                                                try {
-                                                    // Try to fetch pending grades count
-                                                    ResponseEntity<String> pendingGradesResponse = restTemplate
-                                                            .exchange(
-                                                                    gradesServiceUrl + "/api/grades/instructor/"
-                                                                            + userId
-                                                                            + "/pending/count",
-                                                                    org.springframework.http.HttpMethod.GET,
-                                                                    entity,
-                                                                    String.class);
-
-                                                    if (pendingGradesResponse.getStatusCode().is2xxSuccessful()) {
-                                                        JsonNode countJson = objectMapper
-                                                                .readTree(pendingGradesResponse.getBody());
-                                                        if (countJson.get("success").asBoolean()) {
-                                                            model.addAttribute("pendingGrades",
-                                                                    countJson.get("data").asInt());
-                                                        }
-                                                    }
-                                                } catch (Exception e) {
-                                                    System.out.println(
-                                                            "Error fetching pending grades count: " + e.getMessage());
-                                                }
-                                                break;
-                                        }
                                     }
                                 }
                             }
+
                         }
                     }
                 } catch (Exception e) {
