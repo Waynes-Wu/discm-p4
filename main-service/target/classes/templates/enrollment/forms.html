@@ -43,11 +43,8 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/courses">Courses</a>
                     </li>
-                    <li class="nav-item" sec:authorize="hasRole('FACULTY')">
-                        <a class="nav-link" href="/grades">Grades</a>
-                    </li>
-                    <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                        <a class="nav-link" href="/faculty">Faculty</a>
+                    <li class="nav-item" sec:authorize="hasRole('STUDENT')">
+                        <a class="nav-link" href="/grades/view">Grades</a>
                     </li>
                     <li class="nav-item" sec:authorize="hasRole('STUDENT')">
                         <a class="nav-link active" href="/enrollment">Enrollment</a>
